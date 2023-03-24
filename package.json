@@ -1,0 +1,39 @@
+{
+  "name": "pretty-marbles",
+  "version": "0.0.1",
+  "description": "Pretty terminal output for RxJS Marble Tests",
+  "main": "/dist/index.js",
+  "scripts": {
+    "test": "ts-mocha -p tsconfig.json src/**/*.spec.ts",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Surras/pretty-marbles.git"
+  },
+  "keywords": [
+    "rxjs",
+    "marbles",
+    "pretty",
+    "terminal"
+  ],
+  "author": "Marco Rehmer",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Surras/pretty-marbles/issues"
+  },
+  "homepage": "https://github.com/Surras/pretty-marbles#readme",
+  "devDependencies": {
+    "@types/chai": "^4.3.4",
+    "@types/mocha": "^10.0.1",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "prettier": "^2.8.7",
+    "ts-mocha": "^10.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.2"
+  },
+  "dependencies": {
+    "rxjs": "^7.8.0"
+  }
+}
