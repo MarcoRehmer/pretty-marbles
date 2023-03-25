@@ -1,12 +1,21 @@
 import { TestMessage } from 'rxjs/internal/testing/TestMessage';
-import { ObservableNotification } from 'rxjs';
+
+interface TestMessageBase {
+  frame: TestMessage['frame'];
+  notification: TestMessage['notification'] | { kind: 'NONE' };
+}
+
+type TestMessageExtended = TestMessageBase & {
+  resultType: 'actual' | 'expected';
+  status: 'success' | 'error' | 'default';
+};
 
 export function drawMarbles(
   actual: ReadonlyArray<TestMessage>,
   expected: ReadonlyArray<TestMessage>,
 ): string {
   const valueTable = drawValueTable(actual, expected);
-  return `${valueTable}`;
+  return `\n${valueTable}`;
 }
 
 function drawValueTable(
@@ -18,19 +27,28 @@ function drawValueTable(
     ...expected.map(v => v.frame),
   );
 
-  const header = `|${createFrameHeader(maxFrame)}| Kind | a/e | Value`;
+  const header = colorizeRow(
+    `|${createFrameHeader(maxFrame)}| act/exp  | Kind | Value`,
+    'default',
+  );
 
-  const rows = zipResults(actual, expected)
-    .map(message =>
-      [
+  const zippedResults = zipResults(actual, expected);
+  const diffedResults = diffResults(zippedResults);
+
+  const rows = diffedResults
+    .map(message => {
+      const status = message.status;
+      const row = [
         '',
         createFrameCol(message, maxFrame),
-        createKindCol(message),
         createResultTypeCol(message.resultType),
+        createKindCol(message.notification),
         serializeValue(message.notification),
-      ].join('|'),
-    )
-    .map(row => colorizeRow(row, 'default'))
+      ].join('|');
+
+      return { status, row };
+    })
+    .map(({ status, row }) => colorizeRow(row, status))
     .join('\n');
 
   return `${header}\n${rows}`;
@@ -41,23 +59,62 @@ function drawValueTable(
  * @param results
  */
 function diffResults(
-  results: ReadonlyArray<TestMessage>,
-): ReadonlyArray<TestMessage> {
-  return results;
+  results: ReadonlyArray<TestMessageExtended>,
+): ReadonlyArray<TestMessageExtended> {
+  const maxFrame = Math.max(...results.map(v => v.frame));
+  const diffedResults: Array<TestMessageExtended> = [];
+
+  for (let i = 0; i <= maxFrame; i++) {
+    const messages = results.filter(v => v.frame === i);
+
+    // skip, if no values at this frame
+    if (messages.length === 0) {
+      continue;
+    }
+
+    // diffedResults.push({ ...messages[0], status: 'error' });
+    // TODO: refactor to tuple, not array
+    const exp = messages[0];
+    const act = messages[1];
+
+    // TODO: use custom equal func here, if provided
+    if (exp.notification.kind !== act.notification.kind) {
+      diffedResults.push({ ...exp, status: 'error' });
+      diffedResults.push({ ...act, status: 'error' });
+    } else if (
+      exp.notification.kind === 'N' &&
+      act.notification.kind === 'N' &&
+      JSON.stringify(exp.notification.value) !==
+        JSON.stringify(act.notification.value)
+    ) {
+      diffedResults.push({ ...exp, status: 'error' });
+      diffedResults.push({ ...act, status: 'error' });
+    } else if (
+      exp.notification.kind === 'E' &&
+      act.notification.kind === 'E' &&
+      JSON.stringify(exp.notification.error) !==
+        JSON.stringify(act.notification.error)
+    ) {
+      diffedResults.push({ ...exp, status: 'error' });
+      diffedResults.push({ ...act, status: 'error' });
+    } else {
+      diffedResults.push({ ...exp, status: 'success' });
+    }
+  }
+
+  return diffedResults;
 }
 
 function zipResults(
   actual: ReadonlyArray<TestMessage>,
   expected: ReadonlyArray<TestMessage>,
-): ReadonlyArray<TestMessage & { resultType: 'actual' | 'expected' }> {
+): ReadonlyArray<TestMessageExtended> {
   const maxFrame = Math.max(
     ...actual.map(v => v.frame),
     ...expected.map(v => v.frame),
   );
 
-  const zippedMessages: Array<
-    TestMessage & { resultType: 'actual' | 'expected' }
-  > = [];
+  const zippedMessages: Array<TestMessageExtended> = [];
 
   for (let i = 0; i <= maxFrame; i++) {
     const exp = expected.find(v => v.frame === i);
@@ -67,8 +124,29 @@ function zipResults(
       continue;
     }
 
-    exp && zippedMessages.push({ ...exp, resultType: 'expected' });
-    act && zippedMessages.push({ ...act, resultType: 'actual' });
+    const emptyFrame: TestMessageBase = {
+      notification: { kind: 'NONE' },
+      frame: i,
+    };
+
+    exp
+      ? zippedMessages.push({
+          ...exp,
+          resultType: 'expected',
+          status: 'default',
+        })
+      : zippedMessages.push({
+          ...emptyFrame,
+          resultType: 'expected',
+          status: 'default',
+        });
+    act
+      ? zippedMessages.push({ ...act, resultType: 'actual', status: 'default' })
+      : zippedMessages.push({
+          ...emptyFrame,
+          resultType: 'actual',
+          status: 'default',
+        });
   }
 
   return zippedMessages;
@@ -83,21 +161,23 @@ function createFrameHeader(maxFrames: number): string {
   )}`;
 }
 
-function createFrameCol(message: TestMessage, maxFrames: number): string {
+function createFrameCol(message: TestMessageBase, maxFrames: number): string {
   return `   ${message.frame
     .toString()
     .padStart(maxFrames.toString().length, ' ')}   `;
 }
 
-function createKindCol(message: TestMessage): string {
-  return `  ${message.notification.kind}   `;
+function createKindCol(notification: TestMessageBase['notification']): string {
+  return `  ${notification.kind !== 'NONE' ? notification.kind : '-'}   `;
 }
 
-function createResultTypeCol(resultType: 'actual' | 'expected'): string {
-  return ` ${resultType === 'actual' ? 'act' : 'exp'} `;
+function createResultTypeCol(
+  resultType: TestMessageExtended['resultType'],
+): string {
+  return ` ${resultType.padEnd(8, ' ')} `;
 }
 
-function serializeValue(notification: ObservableNotification<any>): string {
+function serializeValue(notification: TestMessageBase['notification']): string {
   let serialized = '';
   switch (notification.kind) {
     case 'C':
@@ -108,6 +188,9 @@ function serializeValue(notification: ObservableNotification<any>): string {
       break;
     case 'E':
       serialized = JSON.stringify(notification.error);
+      break;
+    case 'NONE':
+      serialized = '-';
       break;
   }
 
@@ -131,8 +214,8 @@ function colorizeRow(
       ansiColorEnd = '\x1b[m';
       break;
     case 'default':
-      ansiColor = '';
-      ansiColorEnd = '';
+      ansiColor = '\x1b[38;5;231m';
+      ansiColorEnd = '\x1b[m';
       break;
   }
   return `${ansiColor}${row}${ansiColorEnd}`;
