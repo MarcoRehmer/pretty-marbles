@@ -1,5 +1,10 @@
 import { TestMessage } from 'rxjs/internal/testing/TestMessage';
 
+const FRAMES_COL_HEADER = 'Frames';
+const RESULT_TYPE_COL_HEADER = 'act/exp';
+const NOTIFY_KIND_COL_HEADER = 'Kind';
+const VALUE_COL_HEADER = 'Value';
+
 interface TestMessageBase {
   frame: TestMessage['frame'];
   notification: TestMessage['notification'] | { kind: 'NONE' };
@@ -28,7 +33,10 @@ function drawValueTable(
   );
 
   const header = colorizeRow(
-    `|${createFrameHeader(maxFrame)}| act/exp  | Kind | Value`,
+    `|${createFrameHeader(
+      FRAMES_COL_HEADER,
+      Math.max(maxFrame.toString().length, FRAMES_COL_HEADER.length),
+    )}| ${RESULT_TYPE_COL_HEADER}  | ${NOTIFY_KIND_COL_HEADER} | ${VALUE_COL_HEADER}`,
     'default',
   );
 
@@ -40,7 +48,10 @@ function drawValueTable(
       const status = message.status;
       const row = [
         '',
-        createFrameCol(message.frame, maxFrame),
+        createFrameCol(
+          message.frame,
+          Math.max(maxFrame.toString().length, FRAMES_COL_HEADER.length),
+        ),
         createResultTypeCol(message.resultType),
         createKindCol(message.notification),
         serializeValue(message.notification),
@@ -156,17 +167,16 @@ function zipResults(
 
 function calcMargin(
   value: string,
-  maxFrames: number,
+  valueWidth: number,
   alignment: 'left' | 'right' | 'center' = 'center',
 ) {
-  const frameDigits = maxFrames.toString().length;
   const defaultMargin = 2;
 
   let marginLeft = 0;
   let marginRight = 0;
 
-  if (frameDigits > value.length) {
-    const extraMargin = frameDigits - value.length;
+  if (valueWidth > value.length) {
+    const extraMargin = valueWidth - value.length;
     const even = extraMargin % 2 === 0;
 
     switch (alignment) {
@@ -197,15 +207,15 @@ function calcMargin(
   )}`;
 }
 
-function createFrameHeader(maxFrames: number): string {
-  return `${calcMargin('Frames', maxFrames)}`;
+function createFrameHeader(headerText: string, valueWidth: number): string {
+  return `${calcMargin(headerText, valueWidth)}`;
 }
 
 function createFrameCol(
   frame: TestMessageBase['frame'],
-  maxFrames: number,
+  valueWidth: number,
 ): string {
-  return `${calcMargin(frame.toString(), maxFrames, 'right')}`;
+  return `${calcMargin(frame.toString(), valueWidth, 'right')}`;
 }
 
 function createKindCol(notification: TestMessageBase['notification']): string {
