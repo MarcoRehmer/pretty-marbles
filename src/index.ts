@@ -154,7 +154,11 @@ function zipResults(
   return zippedMessages;
 }
 
-function calcMargin(value: string, maxFrames: number, alignment: 'left' | 'right' | 'center' = 'center') {
+function calcMargin(
+  value: string,
+  maxFrames: number,
+  alignment: 'left' | 'right' | 'center' = 'center',
+) {
   const frameDigits = maxFrames.toString().length;
   const defaultMargin = 2;
 
@@ -165,12 +169,22 @@ function calcMargin(value: string, maxFrames: number, alignment: 'left' | 'right
     const extraMargin = frameDigits - value.length;
     const even = extraMargin % 2 === 0;
 
-    if (even) {
-      marginLeft = extraMargin / 2;
-      marginRight = extraMargin / 2;
-    } else {
-      marginLeft = Math.floor(extraMargin / 2);
-      marginRight = Math.ceil(extraMargin / 2);
+    switch (alignment) {
+      case 'left':
+        marginRight = extraMargin;
+        break;
+      case 'right':
+        marginLeft = extraMargin;
+        break;
+      case 'center':
+        if (even) {
+          marginLeft = extraMargin / 2;
+          marginRight = extraMargin / 2;
+        } else {
+          marginLeft = Math.floor(extraMargin / 2);
+          marginRight = Math.ceil(extraMargin / 2);
+        }
+        break;
     }
   }
 
@@ -191,7 +205,7 @@ function createFrameCol(
   frame: TestMessageBase['frame'],
   maxFrames: number,
 ): string {
-  return `${calcMargin(frame.toString(), maxFrames)}`;
+  return `${calcMargin(frame.toString(), maxFrames, 'right')}`;
 }
 
 function createKindCol(notification: TestMessageBase['notification']): string {
