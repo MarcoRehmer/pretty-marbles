@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { TestScheduler } from 'rxjs/internal/testing/TestScheduler';
-import { drawMarbles, drawValueTable } from '../index';
+import { drawMarbles } from '../index';
 
 describe('Drawing Test', () => {
   let scheduler: TestScheduler;

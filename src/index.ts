@@ -40,7 +40,7 @@ function drawValueTable(
       const status = message.status;
       const row = [
         '',
-        createFrameCol(message, maxFrame),
+        createFrameCol(message.frame, maxFrame),
         createResultTypeCol(message.resultType),
         createKindCol(message.notification),
         serializeValue(message.notification),
@@ -64,6 +64,7 @@ function diffResults(
   const maxFrame = Math.max(...results.map(v => v.frame));
   const diffedResults: Array<TestMessageExtended> = [];
 
+  // TODO: fix performance issue, if MANY frames (for example: 200.000.000)
   for (let i = 0; i <= maxFrame; i++) {
     const messages = results.filter(v => v.frame === i);
 
@@ -116,6 +117,7 @@ function zipResults(
 
   const zippedMessages: Array<TestMessageExtended> = [];
 
+  // TODO: fix performance issue, if MANY frames (for example: 200.000.000)
   for (let i = 0; i <= maxFrame; i++) {
     const exp = expected.find(v => v.frame === i);
     const act = actual.find(v => v.frame === i);
@@ -152,19 +154,44 @@ function zipResults(
   return zippedMessages;
 }
 
-function createFrameHeader(maxFrames: number): string {
-  const maxMargin = 2;
-  const margin = Math.ceil(maxMargin / 2);
-  return `${''.padStart(Math.max(1, margin), ' ')}Frame ${''.padEnd(
-    Math.max(1, margin),
+function calcMargin(value: string, maxFrames: number, alignment: 'left' | 'right' | 'center' = 'center') {
+  const frameDigits = maxFrames.toString().length;
+  const defaultMargin = 2;
+
+  let marginLeft = 0;
+  let marginRight = 0;
+
+  if (frameDigits > value.length) {
+    const extraMargin = frameDigits - value.length;
+    const even = extraMargin % 2 === 0;
+
+    if (even) {
+      marginLeft = extraMargin / 2;
+      marginRight = extraMargin / 2;
+    } else {
+      marginLeft = Math.floor(extraMargin / 2);
+      marginRight = Math.ceil(extraMargin / 2);
+    }
+  }
+
+  marginLeft = marginLeft + defaultMargin / 2;
+  marginRight = marginRight + defaultMargin / 2;
+
+  return `${''.padStart(marginLeft, ' ')}${value}${''.padEnd(
+    marginRight,
     ' ',
   )}`;
 }
 
-function createFrameCol(message: TestMessageBase, maxFrames: number): string {
-  return `   ${message.frame
-    .toString()
-    .padStart(maxFrames.toString().length, ' ')}   `;
+function createFrameHeader(maxFrames: number): string {
+  return `${calcMargin('Frames', maxFrames)}`;
+}
+
+function createFrameCol(
+  frame: TestMessageBase['frame'],
+  maxFrames: number,
+): string {
+  return `${calcMargin(frame.toString(), maxFrames)}`;
 }
 
 function createKindCol(notification: TestMessageBase['notification']): string {

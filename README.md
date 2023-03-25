@@ -15,9 +15,20 @@ Pretty Terminal output for RxJS Marble Tests
  / N \ _   _   _ / C \
  \ _ /           \ _ /
 
-- VALUE TABLE ---
-| Frame | Kind | Value 
-|   1   |  N   | { foo: 'bar', cux: 42 } <-- green, if actual matches expected
-|   2   |  N   | { foo: 'bar', cux: 42 } <-- red, if different values on same frame
-|  10   |  N   | { foo: 'bar', cux: 42 } <-- orange, if value expected, but no emission on frame
+| Frames | act/exp  | Kind | Value
+| ------ | -------- | ---- | ------
+|      0 | expected |  N   | "foo"
+|      1 | expected |  N   | "foo"
+|      2 | expected |  N   | "foo"
+|      2 | actual   |  N   | "bar"
+|      4 | expected |  -   | -
+|      4 | actual   |  N   | "foo"
+|      5 | expected |  N   | {"prop1":"bar","prop2":42}
+|      5 | actual   |  -   | -
+|      9 | expected |  N   | "caz"
+|      9 | actual   |  -   | -
+|     10 | expected |  N   | "cax"
+|     10 | actual   |  N   | "cux"
+|     20 | expected |  N   | "buz"
+| ------ | -------- | ---- | ------
 ```
