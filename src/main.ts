@@ -1,4 +1,4 @@
-import { drawMarbles } from './index';
+import { draw } from './index';
 import { TestMessage } from 'rxjs/internal/testing/TestMessage';
 
 const actValues: ReadonlyArray<TestMessage> = [
@@ -20,4 +20,4 @@ const expValues: ReadonlyArray<TestMessage> = [
   { frame: 20000000, notification: { kind: 'N', value: 'buz' } },
 ];
 
-console.log(drawMarbles(actValues, expValues));
+console.log(draw(actValues, expValues));

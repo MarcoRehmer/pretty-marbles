@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import { TestScheduler } from 'rxjs/internal/testing/TestScheduler';
-import { drawMarbles } from '../index';
+import { draw } from '../index';
 
 describe('Drawing Test', () => {
   let scheduler: TestScheduler;
   beforeEach(() => {
     scheduler = new TestScheduler((actual, expected) => {
-      expect(actual, drawMarbles(actual, expected)).to.deep.equal(expected);
+      expect(actual, draw(actual, expected)).to.deep.equal(expected);
     });
   });
 
